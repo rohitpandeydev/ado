@@ -42,5 +42,3 @@ stages:
     - script: |
         cd github/10_aws
         terraform apply -auto-approve
-      displayName: 'Terraform Apply'
-``
