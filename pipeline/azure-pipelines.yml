@@ -1,0 +1,46 @@
+trigger:
+  branches:
+    include:
+      - '*'
+
+pr:
+  branches:
+    include:
+      - main
+
+stages:
+- stage: TerraformPlan
+  jobs:
+  - job: Plan
+    steps:
+    - checkout: self
+    - script: |
+        cd github/10_aws
+        terraform init  --backend-config=dev/backend.conf --var-file=dev/terraform.tfvars
+        terraform plan
+      displayName: 'Terraform Plan'
+
+- stage: ManualApproval
+  dependsOn: TerraformPlan
+  condition: succeeded()
+  jobs:
+  - job: Approval
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: 'Please approve to proceed with Terraform Apply'
+
+- stage: TerraformApply
+  dependsOn: ManualApproval
+  condition: succeeded()
+  jobs:
+  - job: Apply
+    steps:
+    - checkout: self
+    - script: |
+        cd github/10_aws
+        terraform apply -auto-approve
+      displayName: 'Terraform Apply'
+``
